@@ -64,8 +64,19 @@ const server = http.createServer(async (req, res) => {
 
   // GET /pet/info
   if (url === '/pet/info' && method === 'GET') {
-    const pet = companion.getPet();
-    return json(res, { key: pet.key, name: pet.name, emoji: pet.emoji, color: pet.color });
+    return json(res, companion.getPetInfo());
+  }
+
+  // POST /pet/action
+  if (url === '/pet/action' && method === 'POST') {
+    const body = await readBody(req);
+    let action = 'pet';
+    try {
+      const parsed = body ? JSON.parse(body) : {};
+      action = parsed.action || 'pet';
+    } catch (_) {}
+    const result = companion.act('default', action);
+    return json(res, result, result.ok ? 200 : 400);
   }
 
   // GET /widget — 纯 HTML 片段，openclaw 可通过 iframe / innerHTML 注入
@@ -100,6 +111,7 @@ const server = http.createServer(async (req, res) => {
     <ul>
       <li><code>GET /widget</code> — 获取宠物小部件 HTML</li>
       <li><code>GET /pet/info</code> — 当前宠物信息 JSON</li>
+      <li><code>POST /pet/action</code> — 宠物动作（feed/play/pet/rest）</li>
       <li><code>POST /pet/reset</code> — 重置宠物</li>
     </ul>
   </div>
@@ -111,7 +123,7 @@ const server = http.createServer(async (req, res) => {
   // GET /widget.js — 动态生成 IIFE bundle，嵌入当前宠物数据
   // OpenClaw 将此 URL 用1 个 <script src> 加载，无需 innerHTML
   if (url === '/widget.js' && method === 'GET') {
-    const js = companion.getWidgetJS();
+    const js = companion.getWidgetJS('default', `http://localhost:${PORT}`);
     const body = `/* companion-pets v2 — generated IIFE */\n${js}`;
     res.writeHead(200, {
       'Content-Type': 'application/javascript; charset=utf-8',

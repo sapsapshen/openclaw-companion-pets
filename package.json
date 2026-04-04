@@ -5,6 +5,8 @@
   "main": "companion.js",
   "scripts": {
     "start": "node server.js",
+    "sync:runtime": "node scripts/sync-runtime.js",
+    "validate": "node --check pet-runtime.js && node --check extension/content.js && node --check companion-pets.user.js && node --check companion.js && node --check server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["companion", "pet", "ascii", "webchat", "openclaw"],

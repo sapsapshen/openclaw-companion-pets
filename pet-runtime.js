@@ -1,9 +1,3 @@
-(function () {
-  'use strict';
-
-  if (window.__cpEnhancedMounted) return;
-  window.__cpEnhancedMounted = true;
-
 'use strict';
 
 function createCompanionPetsRuntime(config) {
@@ -456,17 +450,3 @@ function createCompanionPetsRuntime(config) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { createCompanionPetsRuntime };
 }
-
-  createCompanionPetsRuntime({
-    storageKey: 'companion_pets_v3',
-    posKey: 'cp_widget_pos_v3',
-    mountDelayMs: 1500,
-    injectStyle: function (css) {
-      return new Promise(function (resolve) {
-        chrome.runtime.sendMessage({ type: 'inject-css', css: css }, function () {
-          resolve();
-        });
-      });
-    }
-  });
-})();
