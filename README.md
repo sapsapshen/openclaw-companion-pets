@@ -14,6 +14,15 @@
 - 🎮 可交互动作：喂食、玩耍、抚摸、休息，实时影响宠物状态
 - 💬 命令反馈增强：支持 `/pet`、`/pet stats`、`/pet feed|play|pet|rest`、`/pet reset`
 - 🧲 更强交互反馈：拖拽定位、状态条面板、自动闲聊气泡
+- ✅ 使用统一风格图片头像（OpenMoji）替代 ASCII 简笔画
+
+## 宠物图片与状态
+
+- 图片源：OpenMoji CDN（统一图标风格，网络加载）
+- 每只宠物按运行状态显示对应图片帧：`idle`、`excited`、`sleep`
+- 状态帧通过同一套 OpenMoji 资源组合实现，保证所有宠物头像风格一致
+
+> 资源来源：OpenMoji by HfG Schwabisch Gmund（CC BY-SA 4.0）
 
 ---
 

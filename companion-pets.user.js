@@ -75,13 +75,13 @@ function createCompanionPetsRuntime(config) {
       lines: ['叮当！从四次元口袋取出道具~', '小夫你不许欺负大雄！', '铜锣烧！铜锣烧！', '任意门启动！', '今天进口袋睡觉了']
     },
     pikachu: {
-      emoji: '⚡', name: '皮卡丘', color: '#ffd700',
+      emoji: '🐭', name: '电光鼠', color: '#ffd700',
       frames: {
         idle: [' /\\  /\\\n(o  o)\n  ww\n__|__|__', ' /\\  /\\\n(^  ^)\n  ww\n__|__|__'],
         excited: [' /\\  /\\\n(*  *)\n  ww\n__|__|__\n  ⚡⚡', ' /\\  /\\\n(>  <)\n  ww\n__|__|__\n ⚡⚡⚡'],
         sleep: [' /\\  /\\\n(-  -)\n  ww\n__|__|__\n  zzz', ' /\\  /\\\n(o  -)\n  ww\n__|__|__\n   zz']
       },
-      lines: ['皮卡皮卡！⚡', '皮卡丘选择你！', '皮 ~ 卡 ~ 丘！', '（充电中...嗖嗖嗖）', '皮卡...（打哈欠）']
+      lines: ['吱吱！电流就绪！⚡', '电光鼠选择你！', '滋滋滋~满电出击！', '（充电中...嗖嗖嗖）', '吱...（打哈欠）']
     },
     pig: {
       emoji: '🐷', name: '肥猪', color: '#ff69b4',
@@ -122,8 +122,28 @@ function createCompanionPetsRuntime(config) {
   };
 
   const PET_KEYS = Object.keys(PET_DB);
+  const OPENMOJI_CDN = 'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@14.0.0/color/618x618';
+  const PET_AVATAR_URLS = {
+    lobster: `${OPENMOJI_CDN}/1F99E.png`,
+    cat: `${OPENMOJI_CDN}/1F431.png`,
+    dog: `${OPENMOJI_CDN}/1F436.png`,
+    frog: `${OPENMOJI_CDN}/1F438.png`,
+    doraemon: `${OPENMOJI_CDN}/1F916.png`,
+    pikachu: `${OPENMOJI_CDN}/1F42D.png`,
+    pig: `${OPENMOJI_CDN}/1F437.png`,
+    capybara: `${OPENMOJI_CDN}/1F9AB.png`,
+    snake: `${OPENMOJI_CDN}/1F40D.png`,
+    cicada: `${OPENMOJI_CDN}/1F997.png`
+  };
+  const STATE_BADGE_FRAMES = {
+    idle: ['', `${OPENMOJI_CDN}/1F4AC.png`],
+    excited: [`${OPENMOJI_CDN}/2728.png`, `${OPENMOJI_CDN}/1F525.png`],
+    sleep: [`${OPENMOJI_CDN}/1F4A4.png`, `${OPENMOJI_CDN}/1F634.png`]
+  };
   const STORAGE_KEY = cfg.storageKey || 'companion_pets_v3';
   const POS_KEY = cfg.posKey || 'cp_widget_pos_v3';
+  const HIDDEN_KEY = cfg.hiddenKey || 'cp_widget_hidden_v1';
+  const MOUNT_LOCK_ATTR = 'data-cp-widget-lock';
   const DEFAULT_STATS = { hunger: 80, energy: 80, affection: 60, mood: 75, lastDecayAt: Date.now() };
 
   function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
@@ -138,6 +158,15 @@ function createCompanionPetsRuntime(config) {
   function moodText(stage) {
     const map = { 'very-happy': '状态: 超开心', happy: '状态: 开心', normal: '状态: 平稳', tired: '状态: 有点累', sad: '状态: 低落' };
     return map[stage] || map.normal;
+  }
+
+  function framePackForPet(key) {
+    const base = PET_AVATAR_URLS[key] || `${OPENMOJI_CDN}/1F43E.png`;
+    return {
+      idle: STATE_BADGE_FRAMES.idle.map((badge) => ({ pet: base, badge })),
+      excited: STATE_BADGE_FRAMES.excited.map((badge) => ({ pet: base, badge })),
+      sleep: STATE_BADGE_FRAMES.sleep.map((badge) => ({ pet: base, badge }))
+    };
   }
 
   function loadState() {
@@ -226,12 +255,18 @@ function createCompanionPetsRuntime(config) {
 
   function buildCSS(pet) {
     return `
-      #cp-pet-widget{position:fixed;bottom:24px;right:24px;z-index:2147483647;font-family:monospace;white-space:pre;font-size:13px;line-height:1.3;color:${pet.color};cursor:grab;background:rgba(255,255,255,0.95);padding:12px 14px;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,0.18);user-select:none;min-width:160px;text-align:center;touch-action:none;}
+      #cp-pet-widget{position:fixed;bottom:24px;right:24px;z-index:2147483647;font-size:13px;line-height:1.3;color:${pet.color};cursor:grab;background:rgba(255,255,255,0.95);padding:12px 14px;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,0.18);user-select:none;min-width:160px;text-align:center;touch-action:none;}
       #cp-pet-widget.cp-dragging{cursor:grabbing;box-shadow:0 10px 28px rgba(0,0,0,0.28);}
       #cp-pet-widget:hover{box-shadow:0 6px 24px rgba(0,0,0,0.26);}
+      #cp-close{position:absolute;top:6px;right:6px;width:20px;height:20px;border:none;border-radius:999px;background:rgba(0,0,0,.08);color:#555;font-size:12px;line-height:20px;text-align:center;cursor:pointer;padding:0;}
+      #cp-close:hover{background:#ff4d4f;color:#fff;}
       #cp-bubble{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%) scale(0.8);background:${pet.color};color:#fff;padding:7px 13px;border-radius:10px;font-family:sans-serif;font-size:13px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .2s,transform .2s;box-shadow:0 2px 10px rgba(0,0,0,0.18);}
       #cp-bubble.show{opacity:1;transform:translateX(-50%) scale(1);}
       #cp-bubble::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:${pet.color};}
+      #cp-avatar{position:relative;width:92px;height:92px;margin:6px auto 2px;display:flex;align-items:center;justify-content:center;}
+      #cp-avatar img{display:block;pointer-events:none;}
+      #cp-pet-img{width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 3px 5px rgba(0,0,0,.15));}
+      #cp-state-badge{position:absolute;right:-2px;top:-2px;width:26px;height:26px;object-fit:contain;opacity:0;transition:opacity .2s ease;}
       #cp-name-tag{font-family:sans-serif;font-size:11px;color:#666;margin-top:4px;cursor:pointer;}
       #cp-mood{font-family:sans-serif;font-size:10px;color:#666;margin-top:4px;}
       #cp-status{margin-top:6px;display:grid;grid-template-columns:1fr;gap:4px;}
@@ -242,11 +277,63 @@ function createCompanionPetsRuntime(config) {
       #cp-actions{margin-top:7px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;white-space:normal;}
       #cp-actions button{font-family:sans-serif;font-size:10px;line-height:1.1;padding:5px 2px;border:1px solid #d9d9d9;border-radius:8px;background:#fafafa;color:#555;cursor:pointer;}
       #cp-actions button:hover{background:${pet.color};border-color:${pet.color};color:#fff;}
+      #cp-actions button[data-action="dismiss"]{border-color:#ffc9c9;color:#b42318;}
+      #cp-actions button[data-action="dismiss"]:hover{background:#ff4d4f;border-color:#ff4d4f;color:#fff;}
       @keyframes cp-bounce{0%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}70%{transform:translateY(-4px)}}
       @keyframes cp-shake{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
       .cp-anim-bounce{animation:cp-bounce .5s ease;}
       .cp-anim-shake{animation:cp-shake .4s ease;}
     `;
+  }
+
+  function isHidden() {
+    try { return localStorage.getItem(HIDDEN_KEY) === '1'; } catch (_) { return false; }
+  }
+
+  function setHidden(hidden) {
+    try {
+      if (hidden) localStorage.setItem(HIDDEN_KEY, '1');
+      else localStorage.removeItem(HIDDEN_KEY);
+    } catch (_) {}
+  }
+
+  function removeDuplicateWidgets() {
+    const widgets = document.querySelectorAll('#cp-pet-widget');
+    widgets.forEach((w, idx) => {
+      if (idx > 0) w.remove();
+    });
+  }
+
+  function acquireMountLock() {
+    const root = document.documentElement;
+    if (!root) return false;
+    if (root.hasAttribute(MOUNT_LOCK_ATTR)) return false;
+    root.setAttribute(MOUNT_LOCK_ATTR, '1');
+    return true;
+  }
+
+  function releaseMountLock() {
+    const root = document.documentElement;
+    if (!root) return;
+    root.removeAttribute(MOUNT_LOCK_ATTR);
+  }
+
+  function tryWakeByCommand(text) {
+    const t = (text || '').trim();
+    if (!t) return false;
+    if (/^\/pet(\s*)$/i.test(t) || /^\/pet\s+(show|summon)/i.test(t)) {
+      setHidden(false);
+      if (!document.getElementById('cp-pet-widget')) setTimeout(init, 60);
+      return true;
+    }
+    return false;
+  }
+
+  function readInputText(el) {
+    if (!el) return '';
+    if (el.isContentEditable) return el.textContent || '';
+    if (typeof el.value === 'string') return el.value;
+    return '';
   }
 
   function injectToInput(text) {
@@ -280,17 +367,45 @@ function createCompanionPetsRuntime(config) {
   }
 
   function mount() {
-    if (document.getElementById('cp-pet-widget')) return;
+    if (isHidden()) return;
+    if (document.getElementById('cp-pet-widget')) {
+      removeDuplicateWidgets();
+      return;
+    }
+    if (!acquireMountLock()) {
+      setTimeout(init, 120);
+      return;
+    }
+
     const state = ensureState();
     const pet = PET_DB[state.key];
+    const imageFrames = framePackForPet(state.key);
     const stats = state.stats;
     applyStyle(buildCSS(pet)).then(() => {
+      if (document.getElementById('cp-pet-widget')) {
+        removeDuplicateWidgets();
+        return;
+      }
+
       const widget = document.createElement('div');
       widget.id = 'cp-pet-widget';
+      const closeBtn = document.createElement('button');
+      closeBtn.id = 'cp-close';
+      closeBtn.type = 'button';
+      closeBtn.textContent = '✕';
+      closeBtn.title = '解散宠物';
       const bubble = document.createElement('div');
       bubble.id = 'cp-bubble';
-      const asciiEl = document.createElement('div');
-      asciiEl.id = 'cp-ascii';
+      const avatarEl = document.createElement('div');
+      avatarEl.id = 'cp-avatar';
+      const petImg = document.createElement('img');
+      petImg.id = 'cp-pet-img';
+      petImg.alt = `${pet.name} avatar`;
+      const badgeImg = document.createElement('img');
+      badgeImg.id = 'cp-state-badge';
+      badgeImg.alt = 'state badge';
+      avatarEl.appendChild(petImg);
+      avatarEl.appendChild(badgeImg);
       const nameTag = document.createElement('div');
       nameTag.id = 'cp-name-tag';
       nameTag.textContent = `${pet.emoji} ${pet.name}`;
@@ -309,10 +424,10 @@ function createCompanionPetsRuntime(config) {
         const fill = document.createElement('span'); fill.className = 'fill';
         track.appendChild(fill); row.appendChild(label); row.appendChild(track); statusWrap.appendChild(row); barFillMap[item.key] = fill;
       });
-      [{ key: 'feed', text: '喂食' }, { key: 'play', text: '玩耍' }, { key: 'pet', text: '抚摸' }, { key: 'rest', text: '休息' }].forEach((item) => {
+      [{ key: 'feed', text: '喂食' }, { key: 'play', text: '玩耍' }, { key: 'pet', text: '抚摸' }, { key: 'rest', text: '休息' }, { key: 'dismiss', text: '解散' }].forEach((item) => {
         const btn = document.createElement('button'); btn.type = 'button'; btn.dataset.action = item.key; btn.textContent = item.text; actionsWrap.appendChild(btn);
       });
-      widget.appendChild(bubble); widget.appendChild(asciiEl); widget.appendChild(nameTag); widget.appendChild(moodTag); widget.appendChild(statusWrap); widget.appendChild(actionsWrap); document.body.appendChild(widget);
+      widget.appendChild(closeBtn); widget.appendChild(bubble); widget.appendChild(avatarEl); widget.appendChild(nameTag); widget.appendChild(moodTag); widget.appendChild(statusWrap); widget.appendChild(actionsWrap); document.body.appendChild(widget);
 
       function renderStats() {
         BAR_KEYS.forEach((item) => { barFillMap[item.key].style.width = `${stats[item.key]}%`; });
@@ -330,9 +445,18 @@ function createCompanionPetsRuntime(config) {
 
       let animState = 'idle';
       let frameIdx = 0;
-      setInterval(() => {
-        const frames = pet.frames[animState] || pet.frames.idle;
-        asciiEl.textContent = frames[frameIdx % frames.length];
+      let animTimer = null;
+      animTimer = setInterval(() => {
+        const frames = imageFrames[animState] || imageFrames.idle;
+        const frame = frames[frameIdx % frames.length];
+        petImg.src = frame.pet;
+        if (frame.badge) {
+          badgeImg.src = frame.badge;
+          badgeImg.style.opacity = '1';
+        } else {
+          badgeImg.style.opacity = '0';
+          badgeImg.removeAttribute('src');
+        }
         frameIdx += 1;
       }, 800);
 
@@ -359,9 +483,61 @@ function createCompanionPetsRuntime(config) {
         if (say) injectToInput(say);
       }
 
+      let dismissed = false;
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((m) => {
+          m.addedNodes.forEach((node) => {
+            const t = (node.textContent || '').trim();
+            if (/\/pet\s*reset/i.test(t)) {
+              localStorage.removeItem(STORAGE_KEY);
+              observer.disconnect();
+              widget.remove();
+              setHidden(false);
+              setTimeout(mount, 80);
+            } else if (/\/pet\s+stats/i.test(t)) {
+              showBubble(statsSummary());
+            } else if (/\/pet\s+feed/i.test(t)) {
+              doAction('feed');
+            } else if (/\/pet\s+play/i.test(t)) {
+              doAction('play');
+            } else if (/\/pet\s+pet/i.test(t)) {
+              doAction('pet');
+            } else if (/\/pet\s+rest/i.test(t)) {
+              doAction('rest');
+            } else if (/\/pet\s+(dismiss|close|hide)/i.test(t)) {
+              dismissWidget(true);
+            } else if (/\/pet\s+(show|summon)/i.test(t)) {
+              setHidden(false);
+              if (!document.getElementById('cp-pet-widget')) setTimeout(mount, 80);
+            } else if (/\/pet(\s*)$/i.test(t)) {
+              showBubble(`就是我！${pet.name} 在此！ ${moodText(moodStage(stats))}`);
+              setExcited();
+            }
+          });
+        });
+      });
+
+      function dismissWidget(persist) {
+        if (dismissed) return;
+        dismissed = true;
+        if (persist) setHidden(true);
+        clearTimeout(stateTimer);
+        clearTimeout(bubbleTimer);
+        clearInterval(animTimer);
+        clearInterval(chatTimer);
+        observer.disconnect();
+        widget.remove();
+      }
+
+      closeBtn.addEventListener('click', () => dismissWidget(true));
+
       actionsWrap.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-action]');
         if (!btn) return;
+        if (btn.dataset.action === 'dismiss') {
+          dismissWidget(true);
+          return;
+        }
         doAction(btn.dataset.action);
       });
 
@@ -390,7 +566,7 @@ function createCompanionPetsRuntime(config) {
       } catch (_) {}
 
       widget.addEventListener('pointerdown', (e) => {
-        if (e.target.closest('#cp-actions')) return;
+        if (e.target.closest('#cp-actions') || e.target.id === 'cp-close') return;
         dragging = true;
         dragMoved = false;
         const rect = widget.getBoundingClientRect();
@@ -420,50 +596,66 @@ function createCompanionPetsRuntime(config) {
         const line = pet.lines[Math.floor(Math.random() * pet.lines.length)];
         doAction('pet', line);
       }
-      asciiEl.addEventListener('click', onPetClick);
+      avatarEl.addEventListener('click', onPetClick);
       nameTag.addEventListener('click', onPetClick);
 
-      setInterval(() => {
+      let chatTimer = null;
+      chatTimer = setInterval(() => {
         const line = pet.lines[Math.floor(Math.random() * pet.lines.length)];
         showBubble(line);
       }, 45000);
 
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((m) => {
-          m.addedNodes.forEach((node) => {
-            const t = (node.textContent || '').trim();
-            if (/\/pet\s*reset/i.test(t)) {
-              localStorage.removeItem(STORAGE_KEY);
-              observer.disconnect();
-              widget.remove();
-              setTimeout(mount, 80);
-            } else if (/\/pet\s+stats/i.test(t)) {
-              showBubble(statsSummary());
-            } else if (/\/pet\s+feed/i.test(t)) {
-              doAction('feed');
-            } else if (/\/pet\s+play/i.test(t)) {
-              doAction('play');
-            } else if (/\/pet\s+pet/i.test(t)) {
-              doAction('pet');
-            } else if (/\/pet\s+rest/i.test(t)) {
-              doAction('rest');
-            } else if (/\/pet(\s*)$/i.test(t)) {
-              showBubble(`就是我！${pet.name} 在此！ ${moodText(moodStage(stats))}`);
-              setExcited();
-            }
-          });
-        });
-      });
       const root = document.querySelector('[class*="chat"],[class*="message"],[class*="msg"],main') || document.body;
       observer.observe(root, { childList: true, subtree: true });
 
       renderStats();
       scheduleSleep();
+      removeDuplicateWidgets();
+    }).finally(() => {
+      releaseMountLock();
     });
   }
 
+  let wakeObserver = null;
+  let commandKeyListenerBound = false;
+  function ensureWakeObserver() {
+    if (wakeObserver) return;
+
+    wakeObserver = new MutationObserver((mutations) => {
+      mutations.forEach((m) => {
+        if (m.type === 'characterData') {
+          tryWakeByCommand(m.target && m.target.textContent);
+          return;
+        }
+        m.addedNodes.forEach((node) => {
+          tryWakeByCommand(node && node.textContent);
+        });
+      });
+    });
+
+    const root = document.querySelector('[class*="chat"],[class*="message"],[class*="msg"],main') || document.body;
+    if (root) wakeObserver.observe(root, { childList: true, subtree: true, characterData: true });
+
+    if (!commandKeyListenerBound) {
+      commandKeyListenerBound = true;
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const target = e.target;
+        if (!target) return;
+        const isEditable = target.isContentEditable || target.tagName === 'TEXTAREA' || (target.tagName === 'INPUT' && (target.type === 'text' || target.type === 'search'));
+        if (!isEditable) return;
+        tryWakeByCommand(readInputText(target));
+      }, true);
+    }
+  }
+
   function init() {
-    if (document.getElementById('cp-pet-widget')) return;
+    ensureWakeObserver();
+    if (isHidden()) return;
+    if (document.getElementById('cp-pet-widget')) {
+      removeDuplicateWidgets();
+      return;
+    }
     if (document.body) mount();
     else document.addEventListener('DOMContentLoaded', mount, { once: true });
   }
