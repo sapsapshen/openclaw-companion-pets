@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Companion Pets",
+  "version": "1.0.0",
+  "description": "在任意网页右下角显示陪伴宠物小部件，10 种宠物 ASCII 动画 + 点击互动",
+  "permissions": ["scripting", "storage"],
+  "host_permissions": [
+    "http://127.0.0.1:18789/*",
+    "https://chatgpt.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
+    "https://kimi.moonshot.cn/*",
+    "https://doubao.com/*",
+    "https://hunyuan.tencent.com/*",
+    "https://tongyi.aliyun.com/*",
+    "https://yuanbao.tencent.com/*",
+    "https://qwen.aliyun.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://127.0.0.1:18789/*",
+        "https://chatgpt.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://kimi.moonshot.cn/*",
+        "https://doubao.com/*",
+        "https://hunyuan.tencent.com/*",
+        "https://tongyi.aliyun.com/*",
+        "https://yuanbao.tencent.com/*",
+        "https://qwen.aliyun.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

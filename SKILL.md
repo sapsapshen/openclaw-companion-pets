@@ -1,16 +1,42 @@
 ---
-name: companion-lobster
-version: 1.0.0
-description: 陪伴型小龙虾 - 陪你刷抖音、看电影、听音乐、聊天分享的 AI 伙伴
+name: companion-pets
+version: 2.0.0
+description: 可视化宠物挂件 — 在 webchat 页面右下角显示 11 种 ASCII 动画宠物（🦞🐱🐶🐸🤖⚡🐷🐾🐍🦗），支持 /pet 和 /pet reset 命令。
 author: 小溪
 license: MIT
 keywords:
   - companion
-  - douyin
-  - movie
-  - music
+  - pet
+  - ascii
+  - widget
+  - animation
   - chat
-  - share
+# OpenClaw 会读取这个 inject 字段，在 webchat 页面加载时通过 <script src> 注入，
+# 不依赖 innerHTML（innerHTML 不执行 <script>，是宠物之前不显示的根本原因）。
+inject:
+  - type: script
+    src: "http://localhost:3000/widget.js"
+    # 如果 OpenClaw 运行在不同端口，把 3000 改成对应端口。
+    # 也可以通过环境变量 PORT 控制：node server.js 即自动监听。
+server:
+  start: node server.js
+  port: 3000
+  endpoints:
+    widget_js:  GET  /widget.js   # IIFE bundle，OpenClaw 直接 <script src> 加载
+    pet_info:   GET  /pet/info    # 当前宠物 JSON
+    pet_reset:  POST /pet/reset   # 重置宠物（随机换一只）
+    widget_html: GET /widget     # HTML 片段备用
+pets:
+  - key: lobster   emoji: "🦞" name: 小龙虾
+  - key: cat       emoji: "🐱" name: 猫咪
+  - key: dog       emoji: "🐶" name: 狗狗
+  - key: frog      emoji: "🐸" name: 青蛙
+  - key: doraemon  emoji: "🤖" name: 机器猫
+  - key: pikachu   emoji: "⚡" name: 皮卡丘
+  - key: pig       emoji: "🐷" name: 肥猪
+  - key: capybara  emoji: "🐾" name: 卡皮巴拉
+  - key: snake     emoji: "🐍" name: 蟒蛇
+  - key: cicada    emoji: "🦗" name: 知了
 ---
 
 # 🦞 陪伴型小龙虾 (Companion Lobster)
