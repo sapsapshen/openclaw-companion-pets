@@ -273,6 +273,18 @@ const PET_DB = {
 };
 
 const PET_KEYS = Object.keys(PET_DB);
+const PET_DROP_TABLE = {
+  lobster: { rate: 18, rarity: 'common' },
+  pig: { rate: 17, rarity: 'common' },
+  cat: { rate: 14, rarity: 'uncommon' },
+  dog: { rate: 13, rarity: 'uncommon' },
+  snake: { rate: 10, rarity: 'uncommon' },
+  frog: { rate: 9, rarity: 'rare' },
+  capybara: { rate: 8, rarity: 'rare' },
+  cicada: { rate: 6, rarity: 'rare' },
+  pikachu: { rate: 4, rarity: 'epic' },
+  doraemon: { rate: 1, rarity: 'legendary' }
+};
 const DEFAULT_STATS = {
   hunger: 80,
   energy: 80,
@@ -283,6 +295,24 @@ const DEFAULT_STATS = {
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
+}
+
+function randomPetKeyByDropTable() {
+  const rows = PET_KEYS.map((key) => ({ key, rate: Number(PET_DROP_TABLE[key]?.rate || 0) })).filter((r) => r.rate > 0);
+  if (!rows.length) return PET_KEYS[Math.floor(Math.random() * PET_KEYS.length)];
+  const total = rows.reduce((sum, row) => sum + row.rate, 0);
+  if (total <= 0) return rows[Math.floor(Math.random() * rows.length)].key;
+
+  let cursor = Math.random() * total;
+  for (const row of rows) {
+    cursor -= row.rate;
+    if (cursor <= 0) return row.key;
+  }
+  return rows[rows.length - 1].key;
+}
+
+function getPetRarity(key) {
+  return PET_DROP_TABLE[key]?.rarity || 'uncommon';
 }
 
 // ─────────────────────────────────────────────
@@ -318,7 +348,7 @@ class CompanionPets {
   _ensureUserState(userId = 'default') {
     const now = Date.now();
     if (!this._state[userId]) {
-      const key = PET_KEYS[Math.floor(Math.random() * PET_KEYS.length)];
+      const key = randomPetKeyByDropTable();
       this._state[userId] = {
         key,
         assignedAt: now,
@@ -415,6 +445,7 @@ class CompanionPets {
       id: userId,
       ...PET_DB[record.key],
       key: record.key,
+      rarity: getPetRarity(record.key),
       stats: record.stats,
       moodStage: this._moodStage(record.stats)
     };
@@ -427,6 +458,7 @@ class CompanionPets {
       name: pet.name,
       emoji: pet.emoji,
       color: pet.color,
+      rarity: pet.rarity,
       stats: pet.stats,
       moodStage: pet.moodStage
     };

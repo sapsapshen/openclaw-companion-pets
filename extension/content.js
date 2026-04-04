@@ -102,6 +102,26 @@ function createCompanionPetsRuntime(config) {
   };
 
   const PET_KEYS = Object.keys(PET_DB);
+  const RARITY_META = {
+    common: { label: '普通', weight: 44, cardBg: 'rgba(128,128,128,0.22)', badgeBg: '#8a8a8a' },
+    uncommon: { label: '常见', weight: 28, cardBg: 'rgba(255,255,255,0.96)', badgeBg: '#d9d9d9' },
+    rare: { label: '稀有', weight: 16, cardBg: 'rgba(76,175,80,0.22)', badgeBg: '#4caf50' },
+    epic: { label: '史诗', weight: 8, cardBg: 'rgba(255,152,0,0.22)', badgeBg: '#ff9800' },
+    legendary: { label: '传说', weight: 4, cardBg: 'rgba(135,206,235,0.26)', badgeBg: '#6ec6ff' }
+  };
+  // 具体掉落表（总和 100）
+  const PET_DROP_TABLE = {
+    lobster: { rate: 18, rarity: 'common' },
+    pig: { rate: 17, rarity: 'common' },
+    cat: { rate: 14, rarity: 'uncommon' },
+    dog: { rate: 13, rarity: 'uncommon' },
+    snake: { rate: 10, rarity: 'uncommon' },
+    frog: { rate: 9, rarity: 'rare' },
+    capybara: { rate: 8, rarity: 'rare' },
+    cicada: { rate: 6, rarity: 'rare' },
+    pikachu: { rate: 4, rarity: 'epic' },
+    doraemon: { rate: 1, rarity: 'legendary' }
+  };
   const OPENMOJI_CDN = 'https://cdn.jsdelivr.net/gh/hfg-gmuend/openmoji@14.0.0/color/618x618';
   const PET_AVATAR_URLS = {
     lobster: `${OPENMOJI_CDN}/1F99E.png`,
@@ -125,8 +145,28 @@ function createCompanionPetsRuntime(config) {
   const HIDDEN_KEY = cfg.hiddenKey || 'cp_widget_hidden_v1';
   const MOUNT_LOCK_ATTR = 'data-cp-widget-lock';
   const DEFAULT_STATS = { hunger: 80, energy: 80, affection: 60, mood: 75, lastDecayAt: Date.now() };
+  let petCommandHandler = null;
+  let lastCmdSig = '';
+  let lastCmdAt = 0;
 
   function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+  function getPetRarity(key) {
+    const rarityKey = PET_DROP_TABLE[key]?.rarity || 'uncommon';
+    const rarity = RARITY_META[rarityKey] || RARITY_META.uncommon;
+    return { key: rarityKey, ...rarity };
+  }
+  function randomPetKeyByDropTable() {
+    const rows = PET_KEYS.map((key) => ({ key, rate: Number(PET_DROP_TABLE[key]?.rate || 0) })).filter((r) => r.rate > 0);
+    if (!rows.length) return PET_KEYS[Math.floor(Math.random() * PET_KEYS.length)];
+    const total = rows.reduce((sum, row) => sum + row.rate, 0);
+    if (total <= 0) return rows[Math.floor(Math.random() * rows.length)].key;
+    let cursor = Math.random() * total;
+    for (const row of rows) {
+      cursor -= row.rate;
+      if (cursor <= 0) return row.key;
+    }
+    return rows[rows.length - 1].key;
+  }
   function deriveMood(stats) { return clamp(Math.round(stats.energy * 0.35 + stats.hunger * 0.25 + stats.affection * 0.4), 0, 100); }
   function moodStage(stats) {
     if (stats.mood >= 80) return 'very-happy';
@@ -160,7 +200,7 @@ function createCompanionPetsRuntime(config) {
     let state = loadState();
     const now = Date.now();
     if (!state || !state.key || !PET_DB[state.key]) {
-      state = { key: PET_KEYS[Math.floor(Math.random() * PET_KEYS.length)], assignedAt: now, updatedAt: now, stats: { ...DEFAULT_STATS } };
+      state = { key: randomPetKeyByDropTable(), assignedAt: now, updatedAt: now, stats: { ...DEFAULT_STATS } };
       saveState(state);
       return state;
     }
@@ -233,9 +273,9 @@ function createCompanionPetsRuntime(config) {
     return s;
   }
 
-  function buildCSS(pet) {
+  function buildCSS(pet, rarity) {
     return `
-      #cp-pet-widget{position:fixed;bottom:24px;right:24px;z-index:2147483647;font-size:13px;line-height:1.3;color:${pet.color};cursor:grab;background:rgba(255,255,255,0.95);padding:12px 14px;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,0.18);user-select:none;min-width:160px;text-align:center;touch-action:none;}
+      #cp-pet-widget{position:fixed;bottom:24px;right:24px;z-index:2147483647;font-size:13px;line-height:1.3;color:${pet.color};cursor:grab;background:${rarity.cardBg};padding:12px 14px;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,0.18);border:1px solid rgba(0,0,0,0.08);user-select:none;min-width:160px;text-align:center;touch-action:none;backdrop-filter: blur(2px);}
       #cp-pet-widget.cp-dragging{cursor:grabbing;box-shadow:0 10px 28px rgba(0,0,0,0.28);}
       #cp-pet-widget:hover{box-shadow:0 6px 24px rgba(0,0,0,0.26);}
       #cp-close{position:absolute;top:6px;right:6px;width:20px;height:20px;border:none;border-radius:999px;background:rgba(0,0,0,.08);color:#555;font-size:12px;line-height:20px;text-align:center;cursor:pointer;padding:0;}
@@ -248,6 +288,7 @@ function createCompanionPetsRuntime(config) {
       #cp-pet-img{width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 3px 5px rgba(0,0,0,.15));}
       #cp-state-badge{position:absolute;right:-2px;top:-2px;width:26px;height:26px;object-fit:contain;opacity:0;transition:opacity .2s ease;}
       #cp-name-tag{font-family:sans-serif;font-size:11px;color:#666;margin-top:4px;cursor:pointer;}
+      #cp-rarity{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;font-family:sans-serif;font-size:10px;line-height:1;background:${rarity.badgeBg};color:#fff;}
       #cp-mood{font-family:sans-serif;font-size:10px;color:#666;margin-top:4px;}
       #cp-status{margin-top:6px;display:grid;grid-template-columns:1fr;gap:4px;}
       .cp-bar{display:flex;align-items:center;gap:5px;font-family:sans-serif;font-size:10px;color:#666;white-space:normal;}
@@ -298,14 +339,71 @@ function createCompanionPetsRuntime(config) {
     root.removeAttribute(MOUNT_LOCK_ATTR);
   }
 
-  function tryWakeByCommand(text) {
-    const t = (text || '').trim();
-    if (!t) return false;
-    if (/^\/pet(\s*)$/i.test(t) || /^\/pet\s+(show|summon)/i.test(t)) {
-      setHidden(false);
-      if (!document.getElementById('cp-pet-widget')) setTimeout(init, 60);
+  function parsePetCommand(text) {
+    const t = (text || '').replace(/\s+/g, ' ').trim();
+    if (!t) return null;
+    const m = t.match(/^\/pet(?:\s+(.*))?$/i);
+    if (!m) return null;
+
+    const arg = (m[1] || '').trim().toLowerCase();
+    if (!arg) return { key: 'show' };
+
+    const first = arg.split(' ')[0];
+    if (first === 'show' || first === 'summon') return { key: 'show' };
+    if (first === 'reset') return { key: 'reset' };
+    if (first === 'stats') return { key: 'stats' };
+    if (first === 'feed' || first === 'play' || first === 'pet' || first === 'rest') return { key: first };
+    if (first === 'dismiss' || first === 'close' || first === 'hide') return { key: 'dismiss' };
+
+    return { key: 'unknown', raw: first };
+  }
+
+  function ensureWidgetVisibleSoon() {
+    setHidden(false);
+    if (!document.getElementById('cp-pet-widget')) setTimeout(init, 60);
+  }
+
+  function dispatchPetCommand(text, source) {
+    const cmd = parsePetCommand(text);
+    if (!cmd || cmd.key === 'unknown') return false;
+
+    const sig = `${cmd.key}:${source || 'unknown'}`;
+    const now = Date.now();
+    if (sig === lastCmdSig && now - lastCmdAt < 900) return true;
+    lastCmdSig = sig;
+    lastCmdAt = now;
+
+    if (cmd.key === 'show') {
+      ensureWidgetVisibleSoon();
+      if (typeof petCommandHandler === 'function') petCommandHandler(cmd, source || 'unknown');
       return true;
     }
+
+    if (cmd.key === 'reset') {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+      setHidden(false);
+      if (typeof petCommandHandler === 'function') petCommandHandler(cmd, source || 'unknown');
+      else ensureWidgetVisibleSoon();
+      return true;
+    }
+
+    if (typeof petCommandHandler === 'function') {
+      petCommandHandler(cmd, source || 'unknown');
+      return true;
+    }
+
+    if (cmd.key === 'dismiss') {
+      setHidden(true);
+      const widget = document.getElementById('cp-pet-widget');
+      if (widget) widget.remove();
+      return true;
+    }
+
+    if (cmd.key === 'stats' || cmd.key === 'feed' || cmd.key === 'play' || cmd.key === 'pet' || cmd.key === 'rest') {
+      ensureWidgetVisibleSoon();
+      return true;
+    }
+
     return false;
   }
 
@@ -359,9 +457,10 @@ function createCompanionPetsRuntime(config) {
 
     const state = ensureState();
     const pet = PET_DB[state.key];
+    const rarity = getPetRarity(state.key);
     const imageFrames = framePackForPet(state.key);
     const stats = state.stats;
-    applyStyle(buildCSS(pet)).then(() => {
+    applyStyle(buildCSS(pet, rarity)).then(() => {
       if (document.getElementById('cp-pet-widget')) {
         removeDuplicateWidgets();
         return;
@@ -389,6 +488,9 @@ function createCompanionPetsRuntime(config) {
       const nameTag = document.createElement('div');
       nameTag.id = 'cp-name-tag';
       nameTag.textContent = `${pet.emoji} ${pet.name}`;
+      const rarityTag = document.createElement('div');
+      rarityTag.id = 'cp-rarity';
+      rarityTag.textContent = `稀有度 · ${rarity.label}`;
       const moodTag = document.createElement('div');
       moodTag.id = 'cp-mood';
       const statusWrap = document.createElement('div');
@@ -407,7 +509,7 @@ function createCompanionPetsRuntime(config) {
       [{ key: 'feed', text: '喂食' }, { key: 'play', text: '玩耍' }, { key: 'pet', text: '抚摸' }, { key: 'rest', text: '休息' }, { key: 'dismiss', text: '解散' }].forEach((item) => {
         const btn = document.createElement('button'); btn.type = 'button'; btn.dataset.action = item.key; btn.textContent = item.text; actionsWrap.appendChild(btn);
       });
-      widget.appendChild(closeBtn); widget.appendChild(bubble); widget.appendChild(avatarEl); widget.appendChild(nameTag); widget.appendChild(moodTag); widget.appendChild(statusWrap); widget.appendChild(actionsWrap); document.body.appendChild(widget);
+      widget.appendChild(closeBtn); widget.appendChild(bubble); widget.appendChild(avatarEl); widget.appendChild(nameTag); widget.appendChild(rarityTag); widget.appendChild(moodTag); widget.appendChild(statusWrap); widget.appendChild(actionsWrap); document.body.appendChild(widget);
 
       function renderStats() {
         BAR_KEYS.forEach((item) => { barFillMap[item.key].style.width = `${stats[item.key]}%`; });
@@ -463,36 +565,39 @@ function createCompanionPetsRuntime(config) {
         if (say) injectToInput(say);
       }
 
+      function executeCommand(cmd) {
+        if (!cmd || !cmd.key) return;
+        if (cmd.key === 'show') {
+          showBubble(`就是我！${pet.name} 在此！ ${moodText(moodStage(stats))}`);
+          setExcited();
+          return;
+        }
+        if (cmd.key === 'reset') {
+          dismissWidget(false);
+          setHidden(false);
+          setTimeout(mount, 80);
+          return;
+        }
+        if (cmd.key === 'stats') {
+          showBubble(statsSummary());
+          return;
+        }
+        if (cmd.key === 'dismiss') {
+          dismissWidget(true);
+          return;
+        }
+        if (cmd.key === 'feed' || cmd.key === 'play' || cmd.key === 'pet' || cmd.key === 'rest') {
+          doAction(cmd.key);
+        }
+      }
+
       let dismissed = false;
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((m) => {
           m.addedNodes.forEach((node) => {
             const t = (node.textContent || '').trim();
-            if (/\/pet\s*reset/i.test(t)) {
-              localStorage.removeItem(STORAGE_KEY);
-              observer.disconnect();
-              widget.remove();
-              setHidden(false);
-              setTimeout(mount, 80);
-            } else if (/\/pet\s+stats/i.test(t)) {
-              showBubble(statsSummary());
-            } else if (/\/pet\s+feed/i.test(t)) {
-              doAction('feed');
-            } else if (/\/pet\s+play/i.test(t)) {
-              doAction('play');
-            } else if (/\/pet\s+pet/i.test(t)) {
-              doAction('pet');
-            } else if (/\/pet\s+rest/i.test(t)) {
-              doAction('rest');
-            } else if (/\/pet\s+(dismiss|close|hide)/i.test(t)) {
-              dismissWidget(true);
-            } else if (/\/pet\s+(show|summon)/i.test(t)) {
-              setHidden(false);
-              if (!document.getElementById('cp-pet-widget')) setTimeout(mount, 80);
-            } else if (/\/pet(\s*)$/i.test(t)) {
-              showBubble(`就是我！${pet.name} 在此！ ${moodText(moodStage(stats))}`);
-              setExcited();
-            }
+            const cmd = parsePetCommand(t);
+            if (cmd && cmd.key !== 'unknown') executeCommand(cmd);
           });
         });
       });
@@ -501,6 +606,7 @@ function createCompanionPetsRuntime(config) {
         if (dismissed) return;
         dismissed = true;
         if (persist) setHidden(true);
+        if (petCommandHandler === executeCommand) petCommandHandler = null;
         clearTimeout(stateTimer);
         clearTimeout(bubbleTimer);
         clearInterval(animTimer);
@@ -508,6 +614,8 @@ function createCompanionPetsRuntime(config) {
         observer.disconnect();
         widget.remove();
       }
+
+      petCommandHandler = executeCommand;
 
       closeBtn.addEventListener('click', () => dismissWidget(true));
 
@@ -604,11 +712,11 @@ function createCompanionPetsRuntime(config) {
     wakeObserver = new MutationObserver((mutations) => {
       mutations.forEach((m) => {
         if (m.type === 'characterData') {
-          tryWakeByCommand(m.target && m.target.textContent);
+          dispatchPetCommand(m.target && m.target.textContent, 'mutation');
           return;
         }
         m.addedNodes.forEach((node) => {
-          tryWakeByCommand(node && node.textContent);
+          dispatchPetCommand(node && node.textContent, 'mutation');
         });
       });
     });
@@ -624,7 +732,7 @@ function createCompanionPetsRuntime(config) {
         if (!target) return;
         const isEditable = target.isContentEditable || target.tagName === 'TEXTAREA' || (target.tagName === 'INPUT' && (target.type === 'text' || target.type === 'search'));
         if (!isEditable) return;
-        tryWakeByCommand(readInputText(target));
+        dispatchPetCommand(readInputText(target), 'input');
       }, true);
     }
   }
