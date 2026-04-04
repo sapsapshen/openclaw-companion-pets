@@ -122,6 +122,81 @@ function createCompanionPetsRuntime(config) {
   };
 
   const PET_KEYS = Object.keys(PET_DB);
+  const PET_CHATTER_DB = {
+    lobster: ['今天的水温刚刚好，我想认真营业。', '我数过了，今天你看了我三次。', '钳子礼仪第一条：先打招呼再夹空气。', '我决定把烦恼装进泡泡里再放走。', '如果你忙，我就在旁边安静冒泡。', '刚才那朵云看起来像一碗辣汤。', '我怀疑键盘下面藏着一条小海沟。', '请注意，我正在和桌角进行外交会谈。', '我宣布今天的空气带有海盐口味。', '我的左钳刚给右钳发了加班通知。', '咔哒，咔哒，我在给沉默打节拍。', '别惊讶，我能听见WiFi在打喷嚏。', '我把计划写在看不见的珊瑚上了。', '如果宇宙是火锅，我就是会走路的配菜。', '最新情报：月亮欠我一只橡皮筋。'],
+    cat: ['我刚巡视完领地，一切在掌控中。', '把手伸过来，今天允许你摸两次。', '你敲键盘的节奏还算有品味。', '我决定把午睡分成三个高级阶段。', '猫条是礼仪，不是贿赂，明白吗。', '窗外那只鸟看起来在讨论我。', '我刚和影子下棋，平局。', '沙发角落已经被我盖章认证。', '我打了个哈欠，时间自动慢了半秒。', '胡须雷达提示：今晚适合神秘行动。', '我把喵声存进云端，稍后下载。', '地板突然变成了看不见的传送带。', '请保持安静，我在研究重力漏洞。', '现在起，所有纸箱归猫法庭管辖。', '我刚收到宇宙快递：一根会发光的猫毛。'],
+    dog: ['我准备好了，随时可以陪你冲刺。', '闻起来今天会有好事发生。', '我把尾巴摇成了欢迎模式。', '你专注的时候，我负责守护气氛。', '散步提案已提交，等待你批准。', '刚才风告诉我你很厉害。', '我在门口练习了三种开心跑法。', '请注意，我的耳朵捕获了零食频段。', '我和地毯达成了互不打扰协定。', '今天的目标是把快乐翻倍。', '我嗅到空气里有彩虹味道。', '尾巴加速中，可能引发小型气旋。', '我把汪汪翻译成了四国语言。', '如果情绪下雨，我就是你的晴天狗。', '紧急播报：我刚追上了一颗看不见的球。'],
+    frog: ['呱，苔痕上阶绿，草色入帘青。', '王维说：行到水穷处，坐看云起时。', '呱，山重水复疑无路，柳暗花明又一村。', '我在荷叶上默念：不积跬步，无以至千里。', '今天背一首：长风破浪会有时，直挂云帆济沧海。', '池塘哲学：慢一点，才能看见水纹里的月亮。', '刚刚那阵风把我吹成了哲学家。', '我的影子先跳了一步。', '请勿打扰，我在和蚊子谈判。', '呱，我决定给月亮发一条语音。', '荷叶导航显示前方有快乐弯道。', '我把烦恼折成纸船漂走了。', '池塘今晚可能刷新隐藏关卡。', '如果安静有形状，那一定是圆圆的波纹。', '最新预报：青蛙合唱团即将从我脑内开场。'],
+    doraemon: ['道具库盘点完毕，今天很有希望。', '莎士比亚说：凡是过往，皆为序章。', '罗曼·罗兰说：世界上只有一种英雄主义，就是看清生活后依然热爱生活。', '四次元口袋建议你先喝口水，再慢慢解决问题。', '我把今天标记为“可以变好的一天”。', '古诗提醒：纸上得来终觉浅，绝知此事要躬行。', '时光布说你的努力会发光。', '翻译蒟蒻正在翻译猫语和风声。', '竹蜻蜓提示：保持轻盈，问题会变小。', '口袋深处传来“叮”的一声好消息。', '我把担心压缩成了可回收文件。', '空气炮今天只发射鼓励，不发射焦虑。', '缩小灯照了一下，烦恼只剩芝麻大。', '放大灯照了一下，笑容大到装不下。', '系统通知：平行宇宙的你也在认真发光。'],
+    pikachu: ['电量正常，心情也满格。', '我把尾巴调整到节能快乐模式。', '今天适合来一点小小闪光。', '别担心，我的电只会点亮不刺痛。', '我听见空气里有“加油”的回音。', '滋滋，云层里藏着棉花糖电流。', '我刚和插座进行了一次礼貌握手。', '地板在偷偷给我传导好运。', '尾巴天线接收到一段开心广播。', '我把紧张电成了烟花。', '警报：耳朵尖尖检测到彩虹电压。', '请勿靠近，我的可爱可能瞬间过载。', '我给影子充电，它开始跳舞了。', '今晚的月亮看起来像发光电池。', '终极通报：我刚把哈欠电成了流星。'],
+    pig: ['今天也要把日子过得香香的。', '我认真思考过，午睡是刚需。', '如果快乐有重量，我已经超标。', '你忙你的，我在这边稳稳陪着。', '小目标：把烦恼拱到角落里。', '我刚听见饼干袋子在呼唤我。', '地砖的花纹像一张藏宝图。', '我决定把打盹写进时间管理。', '空气里飘着看不见的甜甜圈。', '我和枕头签了长期合作协议。', '哼哼，脑海里正在播放慢动作综艺。', '请让开，我要追一颗想象中的花生。', '今天的重力对我格外温柔。', '我把灵感存进了尾巴卷里。', '重大新闻：我的影子刚刚学会后空翻。'],
+    capybara: ['冷静是我的超能力。', '天行健，君子以自强不息。', '先呼吸，再解决；道阻且长，行则将至。', '山重水复疑无路，柳暗花明又一村。', '长风破浪会有时，直挂云帆济沧海。', '行到水穷处，坐看云起时。', '我把噪音调成了背景白噪声。', '河边石头建议我们先喝口水。', '我正在把时间切成柔软的片段。', '今天的目标是“稳”，不是“急”。', '我和太阳约好轮流发呆。', '请相信，慢一点也算向前。', '温泉模式启动，杂念自动漂走。', '如果心事太重，先放在我背上。', '系统提示：你的平静值正在被我悄悄拉高。'],
+    snake: ['嘶，先观察，再行动。', '知者不惑，仁者不忧，勇者不惧。', '静以修身，俭以养德。', '千里之行，始于足下。', '非淡泊无以明志，非宁静无以致远。', '我擅长在安静里找到机会。', '空气里有一条看不见的弯路。', '嘶，我在地板上画了一个秘密问号。', '太阳借给我一截金色鳞片。', '请勿惊慌，我只是在和风对话。', '我把犹豫打了个结，先放旁边。', '尾巴末端检测到微弱奇迹信号。', '今晚的月光像一条会发光的河。', '如果答案太直，不妨试试曲线前进。', '最新谣言：我能把沉默卷成一顶帽子。'],
+    cicada: ['知了，今日开嗓状态良好。', '夏天的节拍器已经启动。', '我负责把安静叫醒一点点。', '树梢很高，视野很好。', '今天也要唱出有太阳味道的声线。', '我刚和一阵热风合唱了副歌。', '树皮纹路像一张老唱片。', '知了知了，我在给云朵打拍子。', '耳边的嗡鸣其实是夏天在笑。', '我把下午两点唱成了金色。', '请把烦恼调成静音，我来负责高音。', '蝉翼震动到第三档，灵感起飞。', '我听见远处电线在跟唱。', '如果空气会发光，那一定是我的和声。', '重大演出通知：我的脑内蝉鸣团已满员。']
+  };
+  const CALM_PET_KEYS = new Set(['capybara', 'snake', 'doraemon', 'frog']);
+  const CALM_QUOTE_LINES = [
+    '天行健，君子以自强不息。',
+    '地势坤，君子以厚德载物。',
+    '穷则独善其身，达则兼济天下。',
+    '不积跬步，无以至千里。',
+    '不积小流，无以成江海。',
+    '千里之行，始于足下。',
+    '知人者智，自知者明。',
+    '胜人者有力，自胜者强。',
+    '合抱之木，生于毫末。',
+    '上善若水，水善利万物而不争。',
+    '海纳百川，有容乃大。',
+    '静以修身，俭以养德。',
+    '非淡泊无以明志，非宁静无以致远。',
+    '学而不思则罔，思而不学则殆。',
+    '知之者不如好之者，好之者不如乐之者。',
+    '己所不欲，勿施于人。',
+    '知者不惑，仁者不忧，勇者不惧。',
+    '君子和而不同，小人同而不和。',
+    '士不可以不弘毅，任重而道远。',
+    '博学而笃志，切问而近思。',
+    '山重水复疑无路，柳暗花明又一村。',
+    '长风破浪会有时，直挂云帆济沧海。',
+    '会当凌绝顶，一览众山小。',
+    '路漫漫其修远兮，吾将上下而求索。',
+    '欲穷千里目，更上一层楼。',
+    '不畏浮云遮望眼，自缘身在最高层。',
+    '沉舟侧畔千帆过，病树前头万木春。',
+    '江流天地外，山色有无中。',
+    '行到水穷处，坐看云起时。',
+    '大漠孤烟直，长河落日圆。',
+    '采菊东篱下，悠然见南山。',
+    '问君何能尔，心远地自偏。',
+    '草木本无意，荣枯自有时。',
+    '读书破万卷，下笔如有神。',
+    '纸上得来终觉浅，绝知此事要躬行。',
+    '苔痕上阶绿，草色入帘青。',
+    '宠辱不惊，看庭前花开花落。',
+    '去留无意，望天上云卷云舒。',
+    'The unexamined life is not worth living.',
+    'Know thyself.',
+    'No man ever steps in the same river twice.',
+    'Fortune favors the prepared mind.',
+    'Where there is no vision, there is no hope.',
+    'We are what we repeatedly do. Excellence, then, is a habit.',
+    'What we think, we become.',
+    'The obstacle is the way.',
+    'He who has a why to live can bear almost any how.',
+    'To improve is to change; to be perfect is to change often.',
+    'Simplicity is the ultimate sophistication.',
+    'Everything has beauty, but not everyone sees it.',
+    'The journey of a thousand miles begins beneath one’s feet.',
+    'Calm mind brings inner strength and self-confidence.',
+    'In the middle of difficulty lies opportunity.',
+    'Well begun is half done.',
+    'Act without haste, but never pause.',
+    'Measure what is measurable, and make measurable what is not.',
+    'Discipline is choosing between what you want now and what you want most.',
+    'Patience is also a kind of courage.',
+    'When roots are deep, there is no reason to fear the wind.',
+    'A clear mind can hear the quiet answer.'
+  ];
   const RARITY_META = {
     common: { label: '普通', weight: 44, cardBg: 'rgba(128,128,128,0.22)', badgeBg: '#8a8a8a' },
     uncommon: { label: '常见', weight: 28, cardBg: 'rgba(255,255,255,0.96)', badgeBg: '#d9d9d9' },
@@ -164,7 +239,15 @@ function createCompanionPetsRuntime(config) {
   const POS_KEY = cfg.posKey || 'cp_widget_pos_v3';
   const HIDDEN_KEY = cfg.hiddenKey || 'cp_widget_hidden_v1';
   const MOUNT_LOCK_ATTR = 'data-cp-widget-lock';
-  const DEFAULT_STATS = { hunger: 80, energy: 80, affection: 60, mood: 75, lastDecayAt: Date.now() };
+  const DEFAULT_STATS = { hunger: 80, energy: 80, affection: 60, mood: 75, chaos: 20, lastDecayAt: Date.now() };
+  const CHATTER_GUARD = {
+    minIntervalMs: 12000,
+    actionCooldownMs: 10000,
+    maxPerMinute: 5,
+    hiddenDeferMs: 18000,
+    visibleBubbleDeferMs: 3500,
+    cardClickCooldownMs: 3000
+  };
   let petCommandHandler = null;
   let lastCmdSig = '';
   let lastCmdAt = 0;
@@ -209,6 +292,55 @@ function createCompanionPetsRuntime(config) {
     };
   }
 
+  function petChatterList(key) {
+    const lines = PET_CHATTER_DB[key];
+    if (Array.isArray(lines) && lines.length >= 15) return lines;
+    return PET_DB[key]?.lines || [];
+  }
+
+  function randomItem(arr) {
+    if (!arr || !arr.length) return '';
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function calmQuoteChance(chaos) {
+    const c = clamp(Number(chaos) || 0, 0, 100);
+    // Inverse relation: lower chaos => much higher proverb/quote probability.
+    return clamp(0.95 - c * 0.009, 0.05, 0.95);
+  }
+
+  function pickChaosLine(key, chaos) {
+    const lines = petChatterList(key);
+    if (!lines.length) return '';
+    const c = clamp(Number(chaos) || 0, 0, 100);
+
+    if (CALM_PET_KEYS.has(key) && Math.random() < calmQuoteChance(c)) {
+      return randomItem(CALM_QUOTE_LINES);
+    }
+
+    let start = 0;
+    let end = lines.length;
+    if (c < 34) {
+      start = 0;
+      end = Math.min(lines.length, 6);
+    } else if (c < 67) {
+      start = Math.min(4, lines.length - 1);
+      end = Math.min(lines.length, 11);
+    } else {
+      start = Math.min(9, lines.length - 1);
+      end = lines.length;
+    }
+    const pool = lines.slice(start, end).filter(Boolean);
+    return randomItem(pool.length ? pool : lines);
+  }
+
+  function chatterDelayMs(chaos) {
+    const c = clamp(Number(chaos) || 0, 0, 100);
+    const base = 50000 - c * 420;
+    const jitter = Math.floor(Math.random() * 5000);
+    return Math.max(CHATTER_GUARD.minIntervalMs, base + jitter);
+  }
+
   function loadState() {
     try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; } catch (_) { return null; }
   }
@@ -225,12 +357,15 @@ function createCompanionPetsRuntime(config) {
       return state;
     }
     if (!state.stats) state.stats = { ...DEFAULT_STATS };
+    if (typeof state.stats.chaos !== 'number') state.stats.chaos = DEFAULT_STATS.chaos;
     const elapsed = now - (state.stats.lastDecayAt || now);
     const ticks = Math.floor(elapsed / (5 * 60 * 1000));
     if (ticks > 0) {
       state.stats.hunger = clamp(state.stats.hunger - ticks * 2, 0, 100);
       state.stats.energy = clamp(state.stats.energy - ticks * 1, 0, 100);
       state.stats.affection = clamp(state.stats.affection - ticks * 1, 0, 100);
+      const neglectBoost = ticks * (state.stats.affection < 45 ? 2 : 1);
+      state.stats.chaos = clamp(state.stats.chaos + neglectBoost, 0, 100);
       state.stats.mood = deriveMood(state.stats);
       state.stats.lastDecayAt = now;
       state.updatedAt = now;
@@ -276,16 +411,17 @@ function createCompanionPetsRuntime(config) {
 
   function applyAction(state, action) {
     const effects = {
-      feed: { hunger: +18, energy: +3, affection: +4 },
-      play: { hunger: -6, energy: -8, affection: +12 },
-      pet: { affection: +14, energy: +2, hunger: -2 },
-      rest: { energy: +16, hunger: -3, affection: +2 }
+      feed: { hunger: +18, energy: +3, affection: +4, chaos: -6 },
+      play: { hunger: -6, energy: -8, affection: +12, chaos: +8 },
+      pet: { affection: +14, energy: +2, hunger: -2, chaos: -4 },
+      rest: { energy: +16, hunger: -3, affection: +2, chaos: -10 }
     };
     const effect = effects[action] || effects.pet;
     const s = state.stats;
     s.hunger = clamp(s.hunger + (effect.hunger || 0), 0, 100);
     s.energy = clamp(s.energy + (effect.energy || 0), 0, 100);
     s.affection = clamp(s.affection + (effect.affection || 0), 0, 100);
+    s.chaos = clamp((typeof s.chaos === 'number' ? s.chaos : DEFAULT_STATS.chaos) + (effect.chaos || 0), 0, 100);
     s.mood = deriveMood(s);
     s.lastDecayAt = Date.now();
     state.updatedAt = Date.now();
@@ -315,7 +451,8 @@ function createCompanionPetsRuntime(config) {
       .cp-bar .label{width:24px;text-align:left;}
       .cp-bar .track{position:relative;flex:1;height:5px;background:#eee;border-radius:999px;overflow:hidden;}
       .cp-bar .fill{position:absolute;top:0;left:0;bottom:0;background:${pet.color};width:50%;}
-      #cp-actions{margin-top:7px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;white-space:normal;}
+      #cp-actions{margin-top:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;white-space:normal;max-height:0;opacity:0;transform:translateY(8px);overflow:hidden;pointer-events:none;transition:max-height .2s ease,opacity .18s ease,transform .2s ease,margin-top .2s ease;}
+      #cp-pet-widget:hover #cp-actions,#cp-pet-widget:focus-within #cp-actions{margin-top:7px;max-height:120px;opacity:1;transform:translateY(0);pointer-events:auto;}
       #cp-actions button{font-family:sans-serif;font-size:10px;line-height:1.1;padding:5px 2px;border:1px solid #d9d9d9;border-radius:8px;background:#fafafa;color:#555;cursor:pointer;}
       #cp-actions button:hover{background:${pet.color};border-color:${pet.color};color:#fff;}
       #cp-actions button[data-action="dismiss"]{border-color:#ffc9c9;color:#b42318;}
@@ -517,7 +654,7 @@ function createCompanionPetsRuntime(config) {
       statusWrap.id = 'cp-status';
       const actionsWrap = document.createElement('div');
       actionsWrap.id = 'cp-actions';
-      const BAR_KEYS = [{ key: 'hunger', label: '饱食' }, { key: 'energy', label: '精力' }, { key: 'affection', label: '亲密' }, { key: 'mood', label: '心情' }];
+      const BAR_KEYS = [{ key: 'hunger', label: '饱食' }, { key: 'energy', label: '精力' }, { key: 'affection', label: '亲密' }, { key: 'mood', label: '心情' }, { key: 'chaos', label: '混乱' }];
       const barFillMap = {};
       BAR_KEYS.forEach((item) => {
         const row = document.createElement('div'); row.className = 'cp-bar';
@@ -543,7 +680,7 @@ function createCompanionPetsRuntime(config) {
         clearTimeout(bubbleTimer);
         bubbleTimer = setTimeout(() => bubble.classList.remove('show'), 3000);
       }
-      function statsSummary() { return `饱食${stats.hunger} / 精力${stats.energy} / 亲密${stats.affection} / 心情${stats.mood}`; }
+      function statsSummary() { return `饱食${stats.hunger} / 精力${stats.energy} / 亲密${stats.affection} / 心情${stats.mood} / 混乱${stats.chaos}`; }
 
       let animState = 'idle';
       let frameIdx = 0;
@@ -578,6 +715,7 @@ function createCompanionPetsRuntime(config) {
       }
 
       function doAction(action, say) {
+        lastActionAt = Date.now();
         applyAction(state, action);
         renderStats();
         showBubble(actionLine(action, pet, stats));
@@ -630,7 +768,7 @@ function createCompanionPetsRuntime(config) {
         clearTimeout(stateTimer);
         clearTimeout(bubbleTimer);
         clearInterval(animTimer);
-        clearInterval(chatTimer);
+        clearTimeout(chatTimer);
         observer.disconnect();
         widget.remove();
       }
@@ -699,19 +837,71 @@ function createCompanionPetsRuntime(config) {
         if (widget.hasPointerCapture(e.pointerId)) widget.releasePointerCapture(e.pointerId);
       });
 
-      function onPetClick() {
-        if (dragMoved) { dragMoved = false; return; }
-        const line = pet.lines[Math.floor(Math.random() * pet.lines.length)];
-        doAction('pet', line);
+      let lastCardSpeakAt = 0;
+      function maybeSpeakOnCardClick() {
+        const now = Date.now();
+        if (now - lastCardSpeakAt < CHATTER_GUARD.cardClickCooldownMs) return;
+        if (Math.random() > 0.35) return;
+        const line = pickChaosLine(state.key, stats.chaos);
+        if (!line) return;
+        lastCardSpeakAt = now;
+        showBubble(line);
+        setExcited();
       }
-      avatarEl.addEventListener('click', onPetClick);
-      nameTag.addEventListener('click', onPetClick);
+
+      widget.addEventListener('click', (e) => {
+        if (e.target.closest('#cp-actions') || e.target.id === 'cp-close') return;
+        if (dragMoved) {
+          dragMoved = false;
+          return;
+        }
+        maybeSpeakOnCardClick();
+      });
 
       let chatTimer = null;
-      chatTimer = setInterval(() => {
-        const line = pet.lines[Math.floor(Math.random() * pet.lines.length)];
-        showBubble(line);
-      }, 45000);
+      let lastActionAt = 0;
+      const chatterHits = [];
+      function pruneChatterHits(now) {
+        while (chatterHits.length && now - chatterHits[0] > 60000) chatterHits.shift();
+      }
+      function scheduleChatter() {
+        clearTimeout(chatTimer);
+        chatTimer = setTimeout(() => {
+          const now = Date.now();
+          pruneChatterHits(now);
+          if (document.hidden || dragging) {
+            chatTimer = setTimeout(scheduleChatter, CHATTER_GUARD.hiddenDeferMs);
+            return;
+          }
+          if (now - lastActionAt < CHATTER_GUARD.actionCooldownMs) {
+            chatTimer = setTimeout(scheduleChatter, CHATTER_GUARD.actionCooldownMs - (now - lastActionAt));
+            return;
+          }
+          if (bubble.classList.contains('show')) {
+            chatTimer = setTimeout(scheduleChatter, CHATTER_GUARD.visibleBubbleDeferMs);
+            return;
+          }
+          if (chatterHits.length >= CHATTER_GUARD.maxPerMinute) {
+            chatTimer = setTimeout(scheduleChatter, 12000 + Math.floor(Math.random() * 3000));
+            return;
+          }
+
+          const chaosPulse = Math.random() < 0.35 ? 3 : 1;
+          const autoCap = 92;
+          stats.chaos = clamp(stats.chaos + chaosPulse, 0, autoCap);
+          if (stats.chaos >= 88 && Math.random() < 0.55) {
+            // Self-soothing guardrail to prevent permanent high-chaos spam loops.
+            stats.chaos = clamp(stats.chaos - 6, 0, 100);
+          }
+          state.updatedAt = Date.now();
+          saveState(state);
+          renderStats();
+          showBubble(pickChaosLine(state.key, stats.chaos));
+          chatterHits.push(Date.now());
+          scheduleChatter();
+        }, chatterDelayMs(stats.chaos));
+      }
+      scheduleChatter();
 
       const root = document.querySelector('[class*="chat"],[class*="message"],[class*="msg"],main') || document.body;
       observer.observe(root, { childList: true, subtree: true });
