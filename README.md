@@ -1,100 +1,100 @@
 # Companion Pets
 
-> 多宠物字符动画陪伴小部件 — 纯浏览器原生能力，可注入任何网页。
+> A multi-pet animated companion widget powered by native browser capabilities, injectable into any webpage.
 
 ---
 
-## ✨ 特性
+## ✨ Features
 
-- 🐶 纯浏览器原生能力，无需安装额外插件即可运行
-- 🦊 多种宠物提供选择，陪伴你的工作与娱乐
-- 🐾 动画丰富，通过字符画呈现不同的宠物形态
-- 🖥️ 轻松注入到包含 openclaw 等框架在内的现代页面中
-- ❤️ 四维状态系统：饱食 / 精力 / 亲密 / 心情，随时间自然变化
-- 🎮 可交互动作：喂食、玩耍、抚摸、休息，实时影响宠物状态
-- 💬 命令反馈增强：支持 `/pet`、`/pet stats`、`/pet feed|play|pet|rest`、`/pet reset`
-- 🧲 更强交互反馈：拖拽定位、状态条面板、自动闲聊气泡
-- ✅ 使用统一风格图片头像（OpenMoji）替代 ASCII 简笔画
+- 🐶 Runs with native browser capabilities, no extra plugin required
+- 🦊 Multiple pets to choose from for work and entertainment
+- 🐾 Rich animations showing different pet forms with ASCII-style presentation
+- 🖥️ Easy to inject into modern pages, including frameworks like OpenClaw
+- ❤️ Four-dimensional state system: Fullness / Energy / Affection / Mood, evolving naturally over time
+- 🎮 Interactive actions: feed, play, pet, and rest, each affecting pet states in real time
+- 💬 Enhanced command feedback: supports `/pet`, `/pet stats`, `/pet feed|play|pet|rest`, `/pet reset`
+- 🧲 Stronger interaction feedback: drag-to-position, status bar panel, and auto chat bubbles
+- ✅ Uses consistent OpenMoji image avatars instead of simple ASCII doodles
 
-## 宠物图片与状态
+## Pet Images and States
 
-- 图片源：OpenMoji CDN（统一图标风格，网络加载）
-- 每只宠物按运行状态显示对应图片帧：`idle`、`excited`、`sleep`
-- 状态帧通过同一套 OpenMoji 资源组合实现，保证所有宠物头像风格一致
+- Image source: OpenMoji CDN (uniform icon style, loaded over the network)
+- Each pet displays corresponding image frames by runtime state: `idle`, `excited`, `sleep`
+- State frames are composed from the same OpenMoji asset set to keep all pet avatars visually consistent
 
-> 资源来源：OpenMoji by HfG Schwabisch Gmund（CC BY-SA 4.0）
-
----
-
-## 🚀 快速开始
-
-### 方式一：本地服务模式（推荐）
-1. 在项目根目录执行 `npm install`。
-2. 执行 `npm start` 启动服务。
-3. 打开 `http://localhost:3000` 查看演示页面。
-4. 在 OpenClaw 或目标页面注入 `http://localhost:3000/widget.js`。
-
-### 方式二：浏览器扩展模式
-1. 执行 `npm run sync:runtime` 生成最新运行时代码。
-2. 在 Chrome 扩展管理页加载 `extension/` 目录（开发者模式）。
-3. 打开匹配站点后会自动出现宠物挂件。
-
-### 方式三：Userscript 模式
-1. 执行 `npm run sync:runtime` 生成最新 `companion-pets.user.js`。
-2. 在 Tampermonkey 中导入该脚本。
-3. 打开匹配站点体验宠物交互。
+> Asset credit: OpenMoji by HfG Schwabisch Gmund (CC BY-SA 4.0)
 
 ---
 
-## 🏗️ 运行形态
+## 🚀 Quick Start
 
-- 服务端注入：`server.js` + `companion.js`
-- 扩展注入：`extension/content.js`
-- Userscript 注入：`companion-pets.user.js`
-- 单源运行时：`pet-runtime.js`
+### Option 1: Local Server Mode (Recommended)
+1. Run `npm install` in the project root.
+2. Run `npm start` to start the server.
+3. Open `http://localhost:3000` to view the demo page.
+4. Inject `http://localhost:3000/widget.js` into OpenClaw or your target page.
 
----
+### Option 2: Browser Extension Mode
+1. Run `npm run sync:runtime` to generate the latest runtime code.
+2. Load the `extension/` folder in Chrome Extensions (Developer Mode).
+3. Open a matching site and the pet widget will appear automatically.
 
-## 🕹️ 宠物命令
-
-- `/pet`：查看当前宠物
-- `/pet stats`：查看当前宠物状态
-- `/pet feed`：喂食
-- `/pet play`：玩耍
-- `/pet pet`：抚摸
-- `/pet rest`：休息
-- `/pet reset`：重置并随机领养新宠物
-
----
-
-## 🔌 API（服务端模式）
-
-- `GET /widget.js`：宠物前端脚本（IIFE）
-- `GET /widget`：宠物 HTML 片段（备用）
-- `GET /pet/info`：当前宠物与状态数据
-- `POST /pet/action`：宠物动作（`feed`/`play`/`pet`/`rest`）
-- `POST /pet/reset`：重置并重新分配宠物
+### Option 3: Userscript Mode
+1. Run `npm run sync:runtime` to generate the latest `companion-pets.user.js`.
+2. Import the script into Tampermonkey.
+3. Open a matching site to experience pet interactions.
 
 ---
 
-## 🧩 单源化维护
+## 🏗️ Runtime Modes
 
-当前项目已实现真正单源化：
-
-- 运行时唯一源码：`pet-runtime.js`
-- 生成目标文件：`extension/content.js`、`companion-pets.user.js`
-- 生成命令：`npm run sync:runtime`
-- 校验命令：`npm run validate`
-
-推荐开发流程：
-
-1. 修改 `pet-runtime.js`
-2. 执行 `npm run sync:runtime`
-3. 执行 `npm run validate`
-4. 启动 `npm start` 或在扩展/Userscript中验证交互
+- Server-side injection: `server.js` + `companion.js`
+- Extension injection: `extension/content.js`
+- Userscript injection: `companion-pets.user.js`
+- Single-source runtime: `pet-runtime.js`
 
 ---
 
-## 📄 许可证
+## 🕹️ Pet Commands
+
+- `/pet`: show the current pet
+- `/pet stats`: show current pet states
+- `/pet feed`: feed
+- `/pet play`: play
+- `/pet pet`: pet (stroke)
+- `/pet rest`: rest
+- `/pet reset`: reset and randomly adopt a new pet
+
+---
+
+## 🔌 API (Server Mode)
+
+- `GET /widget.js`: pet frontend script (IIFE)
+- `GET /widget`: pet HTML snippet (fallback)
+- `GET /pet/info`: current pet and state data
+- `POST /pet/action`: pet action (`feed`/`play`/`pet`/`rest`)
+- `POST /pet/reset`: reset and reassign a pet
+
+---
+
+## 🧩 Single-Source Maintenance
+
+This project now uses a true single-source architecture:
+
+- Runtime single source of truth: `pet-runtime.js`
+- Generated target files: `extension/content.js`, `companion-pets.user.js`
+- Build command: `npm run sync:runtime`
+- Validation command: `npm run validate`
+
+Recommended development workflow:
+
+1. Edit `pet-runtime.js`
+2. Run `npm run sync:runtime`
+3. Run `npm run validate`
+4. Start with `npm start` or verify interactions in extension/userscript mode
+
+---
+
+## 📄 License
 
 MIT
