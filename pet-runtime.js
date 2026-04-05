@@ -758,6 +758,11 @@ function createCompanionPetsRuntime(config) {
       petCommandHandler = executeCommand;
 
       closeBtn.addEventListener('click', () => dismissWidget(true));
+      
+      widget.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        dismissWidget(true);
+      });
 
       actionsWrap.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-action]');
