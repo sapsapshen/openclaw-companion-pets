@@ -523,13 +523,21 @@ class CompanionPets {
   var PET = ${petJson};
   var API_BASE = ${base};
   var STORAGE_POS_KEY = 'cp_widget_pos_v3';
+  var STORAGE_DOCK_KEY = 'cp_widget_dock_v1';
 
   // ── CSS ──────────────────────────────────
   var style = document.createElement('style');
   style.textContent = [
-    '#cp-pet-widget{position:fixed;bottom:24px;right:24px;z-index:2147483647;font-family:monospace;white-space:pre;font-size:13px;line-height:1.3;color:' + PET.color + ';cursor:grab;background:rgba(255,255,255,0.95);padding:12px 14px;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,0.18);user-select:none;transition:box-shadow 0.2s;min-width:160px;text-align:center;touch-action:none;}',
+    '#cp-pet-widget{position:fixed;bottom:24px;right:24px;z-index:2147483647;font-family:monospace;white-space:pre;font-size:13px;line-height:1.3;color:' + PET.color + ';cursor:grab;background:rgba(255,255,255,0.95);padding:12px 14px;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,0.18);user-select:none;transition:transform .22s cubic-bezier(.2,.7,.2,1),box-shadow .22s cubic-bezier(.2,.7,.2,1);min-width:160px;text-align:center;touch-action:none;}',
     '#cp-pet-widget.cp-dragging{cursor:grabbing;box-shadow:0 10px 28px rgba(0,0,0,0.28);}',
     '#cp-pet-widget:hover{box-shadow:0 6px 24px rgba(0,0,0,0.26);}',
+    '#cp-pet-widget.cp-docked{width:48px !important;height:48px !important;min-width:0 !important;padding:6px !important;border-radius:999px !important;overflow:hidden;cursor:pointer;}',
+    '#cp-pet-widget.cp-docked #cp-ascii,#cp-pet-widget.cp-docked #cp-status,#cp-pet-widget.cp-docked #cp-actions,#cp-pet-widget.cp-docked #cp-mood,#cp-pet-widget.cp-docked #cp-bubble{display:none !important;}',
+    '#cp-pet-widget.cp-docked #cp-name-tag{margin:0 !important;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+    '#cp-pet-widget.cp-docked-left{left:0 !important;right:auto !important;transform:translateX(-10%);}',
+    '#cp-pet-widget.cp-docked-right{right:0 !important;left:auto !important;transform:translateX(10%);}',
+    '#cp-pet-widget.cp-docked-top{top:0 !important;bottom:auto !important;transform:translateY(-10%);}',
+    '#cp-pet-widget.cp-docked-bottom{bottom:0 !important;top:auto !important;transform:translateY(10%);}',
     '#cp-bubble{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%) scale(0.8);background:' + PET.color + ';color:#fff;padding:7px 13px;border-radius:10px;font-family:sans-serif;font-size:13px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.2s,transform 0.2s;box-shadow:0 2px 10px rgba(0,0,0,0.18);}',
     '#cp-bubble.show{opacity:1;transform:translateX(-50%) scale(1);}',
     '#cp-bubble::after{content:\'\';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:' + PET.color + ';}',
@@ -609,7 +617,89 @@ class CompanionPets {
   document.body.appendChild(widget);
 
   var clickTs = 0;
+  var docked = false;
+  var DOCK_THRESHOLD = 36;
+  function clearDockClasses() {
+    widget.classList.remove('cp-docked', 'cp-docked-left', 'cp-docked-right', 'cp-docked-top', 'cp-docked-bottom');
+  }
+  function saveDock(side, pos) {
+    try {
+      localStorage.setItem(STORAGE_DOCK_KEY, JSON.stringify({ side: side, pos: pos }));
+    } catch (_) {}
+  }
+  function loadDock() {
+    try {
+      var raw = localStorage.getItem(STORAGE_DOCK_KEY);
+      if (!raw) return null;
+      var dock = JSON.parse(raw);
+      if (!dock || typeof dock.pos !== 'number') return null;
+      if (['left', 'right', 'top', 'bottom'].indexOf(dock.side) === -1) return null;
+      return dock;
+    } catch (_) {
+      return null;
+    }
+  }
+  function clearDockStorage() {
+    try {
+      localStorage.removeItem(STORAGE_DOCK_KEY);
+    } catch (_) {}
+  }
+  function dockToEdge(side, pos) {
+    docked = true;
+    clearDockClasses();
+    widget.classList.add('cp-docked');
+    widget.classList.add('cp-docked-' + side);
+    if (side === 'left' || side === 'right') {
+      var maxY = window.innerHeight - widget.offsetHeight - 4;
+      var y = Math.max(4, Math.min(pos, maxY));
+      widget.style.top = y + 'px';
+      widget.style.bottom = 'auto';
+      if (side === 'left') {
+        widget.style.left = '0px';
+        widget.style.right = 'auto';
+      } else {
+        widget.style.right = '0px';
+        widget.style.left = 'auto';
+      }
+    } else {
+      var maxX = window.innerWidth - widget.offsetWidth - 4;
+      var x = Math.max(4, Math.min(pos, maxX));
+      widget.style.left = x + 'px';
+      widget.style.right = 'auto';
+      if (side === 'top') {
+        widget.style.top = '0px';
+        widget.style.bottom = 'auto';
+      } else {
+        widget.style.bottom = '0px';
+        widget.style.top = 'auto';
+      }
+    }
+    saveDock(side, pos);
+  }
+  function undockWidget() {
+    if (!docked) return;
+    docked = false;
+    clearDockClasses();
+    clearDockStorage();
+    widget.style.left = 'auto';
+    widget.style.top = 'auto';
+    widget.style.right = '24px';
+    widget.style.bottom = '24px';
+  }
+  function detectEdgeSnap(rect) {
+    var dLeft = rect.left;
+    var dRight = window.innerWidth - rect.right;
+    var dTop = rect.top;
+    var dBottom = window.innerHeight - rect.bottom;
+    var minDist = Math.min(dLeft, dRight, dTop, dBottom);
+    if (minDist > DOCK_THRESHOLD) return null;
+    if (minDist === dLeft) return { side: 'left', pos: rect.top };
+    if (minDist === dRight) return { side: 'right', pos: rect.top };
+    if (minDist === dTop) return { side: 'top', pos: rect.left };
+    return { side: 'bottom', pos: rect.left };
+  }
   function applyPosition(x, y) {
+    if (docked) return;
     var maxX = window.innerWidth - widget.offsetWidth - 4;
     var maxY = window.innerHeight - widget.offsetHeight - 4;
     x = Math.max(4, Math.min(x, maxX));
@@ -636,11 +726,18 @@ class CompanionPets {
     } catch (_) {}
   }
 
-  var savedPos = loadPos();
-  if (savedPos && typeof savedPos.x === 'number' && typeof savedPos.y === 'number') {
+  var savedDock = loadDock();
+  if (savedDock) {
     setTimeout(function() {
-      applyPosition(savedPos.x, savedPos.y);
+      dockToEdge(savedDock.side, savedDock.pos);
     }, 0);
+  } else {
+    var savedPos = loadPos();
+    if (savedPos && typeof savedPos.x === 'number' && typeof savedPos.y === 'number') {
+      setTimeout(function() {
+        applyPosition(savedPos.x, savedPos.y);
+      }, 0);
+    }
   }
 
   // ── Animation ────────────────────────────
@@ -775,6 +872,7 @@ class CompanionPets {
   var dragMoved = false;
   widget.addEventListener('pointerdown', function(e) {
     if (e.target.closest('#cp-actions')) return;
+    if (docked) return;
     isDragging = true;
     dragMoved = false;
     var rect = widget.getBoundingClientRect();
@@ -794,7 +892,12 @@ class CompanionPets {
     widget.classList.remove('cp-dragging');
     if (dragMoved) {
       var rect = widget.getBoundingClientRect();
-      savePos(rect.left, rect.top);
+      var snap = detectEdgeSnap(rect);
+      if (snap) {
+        dockToEdge(snap.side, snap.pos);
+      } else {
+        savePos(rect.left, rect.top);
+      }
     }
     if (widget.hasPointerCapture(e.pointerId)) {
       widget.releasePointerCapture(e.pointerId);
@@ -819,6 +922,10 @@ class CompanionPets {
   }
 
   asciiEl.addEventListener('click', function() {
+    if (docked) {
+      undockWidget();
+      return;
+    }
     if (dragMoved) {
       dragMoved = false;
       return;
@@ -827,6 +934,10 @@ class CompanionPets {
   });
 
   nameTag.addEventListener('click', function() {
+    if (docked) {
+      undockWidget();
+      return;
+    }
     if (dragMoved) {
       dragMoved = false;
       return;
@@ -835,6 +946,7 @@ class CompanionPets {
   });
 
   setInterval(function() {
+    if (docked) return;
     if (Date.now() - clickTs < 20000) return;
     var line = PET.lines[Math.floor(Math.random() * PET.lines.length)];
     showBubble(line);

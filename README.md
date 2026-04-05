@@ -28,13 +28,13 @@
 
 ## 🚀 Quick Start
 
-### Option 1: Local Server Mode
+### Option 1: Local Server Mode (Recommended)
 1. Run `npm install` in the project root.
 2. Run `npm start` to start the server.
 3. Open `http://localhost:3000` to view the demo page.
 4. Inject `http://localhost:3000/widget.js` into OpenClaw or your target page.
 
-### Option 2: Browser Extension Mode (Recommended)
+### Option 2: Browser Extension Mode
 1. Run `npm run sync:runtime` to generate the latest runtime code.
 2. Load the `extension/` folder in Chrome Extensions (Developer Mode).
 3. Open a matching site and the pet widget will appear automatically.
