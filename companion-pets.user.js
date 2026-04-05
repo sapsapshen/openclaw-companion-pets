@@ -237,6 +237,7 @@ function createCompanionPetsRuntime(config) {
   };
   const STORAGE_KEY = cfg.storageKey || 'companion_pets_v3';
   const POS_KEY = cfg.posKey || 'cp_widget_pos_v3';
+  const DOCK_KEY = cfg.dockKey || 'cp_widget_dock_v1';
   const HIDDEN_KEY = cfg.hiddenKey || 'cp_widget_hidden_v1';
   const MOUNT_LOCK_ATTR = 'data-cp-widget-lock';
   const DEFAULT_STATS = { hunger: 80, energy: 80, affection: 60, mood: 75, chaos: 20, lastDecayAt: Date.now() };
@@ -431,9 +432,16 @@ function createCompanionPetsRuntime(config) {
 
   function buildCSS(pet, rarity) {
     return `
-      #cp-pet-widget{position:fixed;bottom:24px;right:24px;z-index:2147483647;font-size:13px;line-height:1.3;color:${pet.color};cursor:grab;background:${rarity.cardBg};padding:12px 14px;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,0.18);border:1px solid rgba(0,0,0,0.08);user-select:none;min-width:160px;text-align:center;touch-action:none;backdrop-filter: blur(2px);}
+      #cp-pet-widget{position:fixed;bottom:24px;right:24px;z-index:2147483647;font-size:13px;line-height:1.3;color:${pet.color};cursor:grab;background:${rarity.cardBg};padding:12px 14px;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,0.18);border:1px solid rgba(0,0,0,0.08);user-select:none;min-width:160px;text-align:center;touch-action:none;backdrop-filter: blur(2px);transition:transform .22s cubic-bezier(.2,.7,.2,1),box-shadow .22s cubic-bezier(.2,.7,.2,1);}
       #cp-pet-widget.cp-dragging{cursor:grabbing;box-shadow:0 10px 28px rgba(0,0,0,0.28);}
       #cp-pet-widget:hover{box-shadow:0 6px 24px rgba(0,0,0,0.26);}
+      #cp-pet-widget.cp-docked{width:48px !important;height:48px !important;min-width:0 !important;padding:6px !important;border-radius:999px !important;overflow:hidden;cursor:pointer;backdrop-filter:none;}
+      #cp-pet-widget.cp-docked #cp-avatar,#cp-pet-widget.cp-docked #cp-rarity,#cp-pet-widget.cp-docked #cp-mood,#cp-pet-widget.cp-docked #cp-status,#cp-pet-widget.cp-docked #cp-actions,#cp-pet-widget.cp-docked #cp-bubble,#cp-pet-widget.cp-docked #cp-close{display:none !important;}
+      #cp-pet-widget.cp-docked #cp-name-tag{margin:0 !important;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+      #cp-pet-widget.cp-docked-left{left:0 !important;right:auto !important;transform:translateX(calc(-100% + 18px)) !important;}
+      #cp-pet-widget.cp-docked-right{right:0 !important;left:auto !important;transform:translateX(calc(100% - 18px)) !important;}
+      #cp-pet-widget.cp-docked-top{top:0 !important;bottom:auto !important;transform:translateY(calc(-100% + 18px)) !important;}
+      #cp-pet-widget.cp-docked-bottom{bottom:0 !important;top:auto !important;transform:translateY(calc(100% - 18px)) !important;}
       #cp-close{position:absolute;top:6px;right:6px;width:20px;height:20px;border:none;border-radius:999px;background:rgba(0,0,0,.08);color:#555;font-size:12px;line-height:20px;text-align:center;cursor:pointer;padding:0;}
       #cp-close:hover{background:#ff4d4f;color:#fff;}
       #cp-bubble{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%) scale(0.8);background:${pet.color};color:#fff;padding:7px 13px;border-radius:10px;font-family:sans-serif;font-size:13px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .2s,transform .2s;box-shadow:0 2px 10px rgba(0,0,0,0.18);}
@@ -789,32 +797,132 @@ function createCompanionPetsRuntime(config) {
 
       let dragMoved = false;
       let dragging = false;
+      let docked = false;
+      let pendingSnap = null;
       let offX = 0;
       let offY = 0;
+      const DOCK_THRESHOLD = 24;
+      function clearDockClasses() {
+        widget.classList.remove('cp-docked', 'cp-docked-left', 'cp-docked-right', 'cp-docked-top', 'cp-docked-bottom');
+      }
+      function saveDock(side, pos) {
+        try { localStorage.setItem(DOCK_KEY, JSON.stringify({ side, pos })); } catch (_) {}
+      }
+      function clearDockStorage() {
+        try { localStorage.removeItem(DOCK_KEY); } catch (_) {}
+      }
+      function loadDock() {
+        try {
+          const raw = localStorage.getItem(DOCK_KEY);
+          if (!raw) return null;
+          const dock = JSON.parse(raw);
+          if (!dock || typeof dock.pos !== 'number') return null;
+          if (!['left', 'right', 'top', 'bottom'].includes(dock.side)) return null;
+          return dock;
+        } catch (_) {
+          return null;
+        }
+      }
+      function dockToEdge(side, pos) {
+        docked = true;
+        clearDockClasses();
+        widget.classList.add('cp-docked', `cp-docked-${side}`);
+        if (side === 'left' || side === 'right') {
+          const maxY = window.innerHeight - widget.offsetHeight;
+          const y = Math.max(0, Math.min(pos, maxY));
+          widget.style.top = `${y}px`;
+          widget.style.bottom = 'auto';
+          if (side === 'left') {
+            widget.style.left = '0px';
+            widget.style.right = 'auto';
+          } else {
+            widget.style.right = '0px';
+            widget.style.left = 'auto';
+          }
+        } else {
+          const maxX = window.innerWidth - widget.offsetWidth;
+          const x = Math.max(0, Math.min(pos, maxX));
+          widget.style.left = `${x}px`;
+          widget.style.right = 'auto';
+          if (side === 'top') {
+            widget.style.top = '0px';
+            widget.style.bottom = 'auto';
+          } else {
+            widget.style.bottom = '0px';
+            widget.style.top = 'auto';
+          }
+        }
+        saveDock(side, pos);
+      }
+      function undockWidget() {
+        if (!docked) return;
+        const lastDock = loadDock();
+        docked = false;
+        clearDockClasses();
+        clearDockStorage();
+        const margin = 12;
+        if (lastDock) {
+          if (lastDock.side === 'left') {
+            applyPos(margin, lastDock.pos);
+          } else if (lastDock.side === 'right') {
+            applyPos(window.innerWidth - widget.offsetWidth - margin, lastDock.pos);
+          } else if (lastDock.side === 'top') {
+            applyPos(lastDock.pos, margin);
+          } else {
+            applyPos(lastDock.pos, window.innerHeight - widget.offsetHeight - margin);
+          }
+          try {
+            const rect = widget.getBoundingClientRect();
+            localStorage.setItem(POS_KEY, JSON.stringify({ x: rect.left, y: rect.top }));
+          } catch (_) {}
+        }
+      }
+      function detectEdgeSnap(rect) {
+        const dLeft = rect.left;
+        const dRight = window.innerWidth - rect.right;
+        const dTop = rect.top;
+        const dBottom = window.innerHeight - rect.bottom;
+        const near = [
+          { side: 'left', d: dLeft, pos: rect.top },
+          { side: 'right', d: dRight, pos: rect.top },
+          { side: 'top', d: dTop, pos: rect.left },
+          { side: 'bottom', d: dBottom, pos: rect.left }
+        ].sort((a, b) => a.d - b.d)[0];
+        if (!near || near.d > DOCK_THRESHOLD) return null;
+        return { side: near.side, pos: near.pos };
+      }
       function applyPos(x, y) {
-        const maxX = window.innerWidth - widget.offsetWidth - 4;
-        const maxY = window.innerHeight - widget.offsetHeight - 4;
-        x = Math.max(4, Math.min(x, maxX));
-        y = Math.max(4, Math.min(y, maxY));
+        if (docked) return;
+        const maxX = window.innerWidth - widget.offsetWidth;
+        const maxY = window.innerHeight - widget.offsetHeight;
+        x = Math.max(0, Math.min(x, maxX));
+        y = Math.max(0, Math.min(y, maxY));
         widget.style.left = `${x}px`;
         widget.style.top = `${y}px`;
         widget.style.right = 'auto';
         widget.style.bottom = 'auto';
       }
       try {
-        const raw = localStorage.getItem(POS_KEY);
-        if (raw) {
-          const pos = JSON.parse(raw);
-          if (typeof pos.x === 'number' && typeof pos.y === 'number') {
-            setTimeout(() => applyPos(pos.x, pos.y), 0);
+        const savedDock = loadDock();
+        if (savedDock) {
+          setTimeout(() => dockToEdge(savedDock.side, savedDock.pos), 0);
+        } else {
+          const raw = localStorage.getItem(POS_KEY);
+          if (raw) {
+            const pos = JSON.parse(raw);
+            if (typeof pos.x === 'number' && typeof pos.y === 'number') {
+              setTimeout(() => applyPos(pos.x, pos.y), 0);
+            }
           }
         }
       } catch (_) {}
 
       widget.addEventListener('pointerdown', (e) => {
         if (e.target.closest('#cp-actions') || e.target.id === 'cp-close') return;
+        if (docked) return;
         dragging = true;
         dragMoved = false;
+        pendingSnap = null;
         const rect = widget.getBoundingClientRect();
         offX = e.clientX - rect.left;
         offY = e.clientY - rect.top;
@@ -825,17 +933,28 @@ function createCompanionPetsRuntime(config) {
         if (!dragging) return;
         dragMoved = true;
         applyPos(e.clientX - offX, e.clientY - offY);
+        pendingSnap = detectEdgeSnap(widget.getBoundingClientRect());
       });
-      widget.addEventListener('pointerup', (e) => {
+      function finalizeDrag(e) {
         if (!dragging) return;
         dragging = false;
         widget.classList.remove('cp-dragging');
-        if (dragMoved) {
-          const rect = widget.getBoundingClientRect();
-          try { localStorage.setItem(POS_KEY, JSON.stringify({ x: rect.left, y: rect.top })); } catch (_) {}
+        const rect = widget.getBoundingClientRect();
+        const snap = pendingSnap || detectEdgeSnap(rect);
+        pendingSnap = null;
+        if (snap) {
+          dockToEdge(snap.side, snap.pos);
+        } else if (dragMoved) {
+            try { localStorage.setItem(POS_KEY, JSON.stringify({ x: rect.left, y: rect.top })); } catch (_) {}
         }
-        if (widget.hasPointerCapture(e.pointerId)) widget.releasePointerCapture(e.pointerId);
-      });
+        if (e && typeof e.pointerId === 'number' && widget.hasPointerCapture(e.pointerId)) {
+          widget.releasePointerCapture(e.pointerId);
+        }
+      }
+      widget.addEventListener('pointerup', (e) => finalizeDrag(e));
+      widget.addEventListener('pointercancel', (e) => finalizeDrag(e));
+      window.addEventListener('pointerup', (e) => finalizeDrag(e), true);
+      window.addEventListener('pointercancel', (e) => finalizeDrag(e), true);
 
       let lastCardSpeakAt = 0;
       function maybeSpeakOnCardClick() {
@@ -851,6 +970,10 @@ function createCompanionPetsRuntime(config) {
 
       widget.addEventListener('click', (e) => {
         if (e.target.closest('#cp-actions') || e.target.id === 'cp-close') return;
+        if (docked) {
+          undockWidget();
+          return;
+        }
         if (dragMoved) {
           dragMoved = false;
           return;
@@ -869,7 +992,7 @@ function createCompanionPetsRuntime(config) {
         chatTimer = setTimeout(() => {
           const now = Date.now();
           pruneChatterHits(now);
-          if (document.hidden || dragging) {
+          if (document.hidden || dragging || docked) {
             chatTimer = setTimeout(scheduleChatter, CHATTER_GUARD.hiddenDeferMs);
             return;
           }
